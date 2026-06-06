@@ -2,8 +2,18 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const Database = require('./db/Database');
 const logger = require('./utils/logger');
+
+// Keep-alive HTTP server for Render free tier
+const server = http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end('OK');
+});
+server.listen(process.env.PORT || 3000, () => {
+  logger.info(`Keep-alive server running on port ${process.env.PORT || 3000}`);
+});
 
 if (!process.env.BOT_TOKEN) {
   logger.error('BOT_TOKEN is missing from .env');
