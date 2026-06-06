@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Bot</title>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root {
+  --bg: #111214;
+  --sidebar: #0b0c0e;
+  --surface: #1a1b1e;
+  --surface-2: #232428;
+  --surface-3: #2b2d31;
+  --accent: #5865f2;
+  --accent-hover: #4752c4;
+  --accent-dim: rgba(88,101,242,0.15);
+  --text: #f2f3f5;
+  --text-2: #b5bac1;
+  --text-3: #6d6f78;
+  --danger: #da373c;
+  --success: #23a55a;
+  --warning: #f0b232;
+  --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'gg sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg); color: var(--text);
+  -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex;
+}
+.hidden { display: none !important; }
+
+/* Login */
+.login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; width: 100%; padding: 20px; }
+.login-card { background: var(--surface); border-radius: 12px; padding: 48px; text-align: center; max-width: 380px; width: 100%; border: 1px solid var(--surface-2); }
+.login-card h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.login-card p { color: var(--text-2); font-size: 14px; margin-bottom: 28px; }
+.login-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--accent); color: #fff; padding: 12px 28px;
+  border-radius: var(--radius); font-size: 15px; font-weight: 600;
+  cursor: pointer; text-decoration: none; transition: 0.15s; border: none;
+}
+.login-btn:hover { background: var(--accent-hover); }
+
+/* Layout */
+.dashboard { display: flex; width: 100%; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: 220px; flex-shrink: 0; background: var(--sidebar);
+  display: flex; flex-direction: column; border-right: 1px solid var(--surface-2);
+  user-select: none;
+}
+.sidebar-header {
+  padding: 16px 16px 12px; font-size: 13px; font-weight: 700;
+  color: var(--text-2); letter-spacing: 0.3px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sidebar-header svg { width: 20px; height: 20px; color: var(--accent); }
+.sidebar-nav { flex: 1; padding: 4px 8px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  font-size: 14px; font-weight: 500; color: var(--text-2);
+  transition: 0.1s; margin-bottom: 2px;
+}
+.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.nav-item:hover { background: var(--surface-2); color: var(--text); }
+.nav-item.active { background: var(--accent-dim); color: var(--accent); }
+.sidebar-footer {
+  padding: 12px 8px; border-top: 1px solid var(--surface-2);
+}
+.server-select {
+  appearance: none; background: var(--surface-2); color: var(--text);
+  border: none; padding: 8px 10px; border-radius: 6px;
+  font-size: 13px; cursor: pointer; width: 100%;
+}
+.server-select:focus { outline: none; background: var(--surface-3); }
+.server-select option { background: var(--surface-2); color: var(--text); }
+
+/* Main */
+.main {
+  flex: 1; display: flex; flex-direction: column; min-width: 0;
+}
+.topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; background: var(--surface);
+  border-bottom: 1px solid var(--surface-2);
+}
+.topbar .spacer { flex: 1; }
+.topbar .user-info { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); }
+.topbar .user-info img { width: 28px; height: 28px; border-radius: 50%; }
+.logout-btn {
+  background: var(--surface-2); color: var(--text-2); border: none;
+  padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+  text-decoration: none; transition: 0.15s;
+}
+.logout-btn:hover { background: var(--danger); color: #fff; }
+
+/* Content */
+.content {
+  flex: 1; padding: 20px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 16px;
+  max-width: 900px;
+}
+
+/* Search */
+.search-row {
+  display: flex; gap: 6px;
+}
+.search-row input {
+  flex: 1; background: var(--surface-2); color: var(--text); border: none;
+  padding: 10px 14px; border-radius: var(--radius); font-size: 14px;
+}
+.search-row input:focus { outline: none; background: var(--surface-3); }
+.search-row input::placeholder { color: var(--text-3); }
+.search-row button {
+  background: var(--accent); color: #fff; border: none;
+  padding: 10px 20px; border-radius: var(--radius); font-size: 14px;
+  font-weight: 600; cursor: pointer; transition: 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.search-row button:hover { background: var(--accent-hover); }
+.search-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Now Playing Card */
+.np-card {
+  background: var(--surface); border-radius: var(--radius);
+  border: 1px solid var(--surface-2); padding: 20px;
+  display: flex; gap: 20px; align-items: flex-start;
+}
+@media (max-width: 600px) { .np-card { flex-direction: column; align-items: stretch; } }
+.np-art {
+  width: 120px; height: 120px; border-radius: 6px;
+  object-fit: cover; background: var(--surface-2); flex-shrink: 0;
+}
+@media (max-width: 600px) { .np-art { width: 80px; height: 80px; } }
+.np-body { flex: 1; min-width: 0; }
+.np-title { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+.np-title a { color: var(--text); text-decoration: none; }
+.np-title a:hover { text-decoration: underline; }
+.np-artist { font-size: 14px; color: var(--text-2); margin-bottom: 4px; }
+.np-req { font-size: 12px; color: var(--text-3); margin-bottom: 12px; }
+
+.np-progress { margin-bottom: 14px; }
+.np-progress .bar {
+  width: 100%; height: 4px; background: var(--surface-2); border-radius: 2px;
+  overflow: hidden; cursor: pointer; margin-bottom: 4px;
+}
+.np-progress .bar .fill {
+  height: 100%; background: var(--accent); border-radius: 2px; width: 0%;
+}
+.np-progress .time {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums;
+}
+
+.np-controls {
+  display: flex; align-items: center; gap: 4px;
+}
+.np-controls .ctrl {
+  background: none; border: none; color: var(--text-2);
+  width: 36px; height: 36px; border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: 0.1s; font-size: 0;
+}
+.np-controls .ctrl svg { width: 20px; height: 20px; }
+.np-controls .ctrl:hover { background: var(--surface-2); color: var(--text); }
+.np-controls .ctrl.primary { background: var(--accent); color: #fff; }
+.np-controls .ctrl.primary:hover { background: var(--accent-hover); }
+.np-controls .ctrl.danger:hover { background: rgba(218,55,60,0.15); color: var(--danger); }
+.np-controls .ctrl.active { color: var(--accent); }
+.np-controls .vol-group { display: flex; align-items: center; gap: 6px; margin-left: 12px; }
+.np-controls .vol-group label { color: var(--text-3); font-size: 0; display: flex; }
+.np-controls .vol-group label svg { width: 18px; height: 18px; }
+.np-controls .vol-group input[type="range"] {
+  width: 80px; accent-color: var(--accent); cursor: pointer; height: 4px;
+}
+.np-controls .vol-group span { font-size: 12px; color: var(--text-3); min-width: 28px; font-variant-numeric: tabular-nums; }
+
+/* Settings row */
+.np-settings {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px;
+}
+.np-settings .filter-sel {
+  background: var(--surface-2); color: var(--text); border: none;
+  padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+}
+.np-settings .filter-sel:focus { outline: none; background: var(--surface-3); }
+.np-settings .pill {
+  background: var(--surface-2); color: var(--text-2); border: none;
+  padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;
+  transition: 0.15s;
+}
+.np-settings .pill:hover { background: var(--surface-3); color: var(--text); }
+.np-settings .pill.on { background: var(--accent-dim); color: var(--accent); }
+
+/* Queue + Playlists */
+.split { display: flex; gap: 16px; }
+@media (max-width: 700px) { .split { flex-direction: column; } }
+.split > * { flex: 1; min-width: 0; }
+
+.panel {
+  background: var(--surface); border-radius: var(--radius);
+  border: 1px solid var(--surface-2);
+}
+.panel-hdr {
+  padding: 14px 16px; font-size: 12px; font-weight: 700;
+  color: var(--text-2); border-bottom: 1px solid var(--surface-2);
+  display: flex; align-items: center; gap: 6px;
+}
+.panel-hdr svg { width: 16px; height: 16px; }
+
+.queue-empty {
+  padding: 32px 16px; text-align: center; color: var(--text-3); font-size: 13px;
+}
+.queue-table { width: 100%; border-collapse: collapse; }
+.queue-table th {
+  text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600;
+  color: var(--text-3); border-bottom: 1px solid var(--surface-2);
+}
+.queue-table td {
+  padding: 8px 12px; border-bottom: 1px solid var(--surface-2);
+  font-size: 13px; cursor: grab;
+}
+.queue-table tr:last-child td { border-bottom: none; }
+.queue-table tr:hover td { background: var(--surface-2); }
+.queue-table tr.dragging td { opacity: 0.3; }
+.queue-table tr.drag-over td { border-top: 2px solid var(--accent); }
+.q-pos { width: 32px; color: var(--text-3); text-align: center; font-size: 11px; }
+.q-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.q-title a { color: var(--text); text-decoration: none; }
+.q-title a:hover { color: var(--accent); }
+.q-dur { width: 52px; color: var(--text-3); text-align: right; font-size: 12px; font-variant-numeric: tabular-nums; }
+.q-act { width: 32px; text-align: center; }
+.rm-btn {
+  background: none; border: none; color: var(--text-3); cursor: pointer;
+  font-size: 16px; padding: 2px; border-radius: 4px; line-height: 1;
+  transition: 0.1s; display: flex; align-items: center; justify-content: center;
+}
+.rm-btn svg { width: 16px; height: 16px; }
+.rm-btn:hover { color: var(--danger); background: rgba(218,55,60,0.12); }
+
+/* Playlist */
+.pl-section { padding: 14px 16px; border-top: 1px solid var(--surface-2); }
+.pl-row { display: flex; gap: 4px; margin-bottom: 8px; }
+.pl-row input {
+  flex: 1; min-width: 60px; background: var(--surface-2); color: var(--text);
+  border: none; padding: 7px 10px; border-radius: 6px; font-size: 13px;
+}
+.pl-row input:focus { outline: none; background: var(--surface-3); }
+.pl-row button {
+  background: var(--surface-2); color: var(--text-2); border: none;
+  padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  transition: 0.15s; display: flex; align-items: center;
+}
+.pl-row button:hover { background: var(--surface-3); color: var(--text); }
+.pl-row button.danger:hover { background: rgba(218,55,60,0.15); color: var(--danger); }
+.pl-row button:disabled { opacity: 0.3; cursor: not-allowed; }
+.pl-list { max-height: 180px; overflow-y: auto; }
+.pl-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; background: var(--surface-2); border-radius: 6px;
+  margin-bottom: 3px; cursor: pointer; transition: 0.1s;
+  border: 1px solid transparent;
+}
+.pl-item:hover { background: var(--surface-3); }
+.pl-item.sel { border-color: var(--accent); }
+.pl-item .pl-n { flex: 1; font-size: 13px; }
+.pl-item .pl-c { color: var(--text-3); font-size: 11px; }
+.pl-item .pl-d {
+  background: none; border: none; color: var(--text-3); cursor: pointer;
+  font-size: 13px; padding: 2px; border-radius: 4px; line-height: 1;
+}
+.pl-item .pl-d:hover { color: var(--danger); background: rgba(218,55,60,0.12); }
+
+/* No server */
+.no-srv { text-align: center; padding: 80px 20px; }
+.no-srv h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+.no-srv p { color: var(--text-2); font-size: 14px; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--surface); color: var(--text); padding: 10px 20px;
+  border-radius: 8px; font-size: 13px; z-index: 200;
+  border: 1px solid var(--surface-2); transition: opacity 0.2s;
+  pointer-events: none;
+}
+.toast.ok { border-color: var(--success); }
+.toast.err { border-color: var(--danger); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="loginPage" class="login-page">
+  <div class="login-card">
+    <h1>Music Bot</h1>
+    <p>Log in with Discord to control playback</p>
+    <a href="/auth/discord" class="login-btn">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418z"/></svg>
+      Log in
+    </a>
+  </div>
+</div>
+
+<div id="dashboard" class="dashboard hidden">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <svg data-lucide="music-4"></svg>
+      Music Bot
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-item active" data-page="home" onclick="switchPage('home')">
+        <svg data-lucide="home"></svg> Home
+      </div>
+      <div class="nav-item" data-page="queue" onclick="switchPage('queue')">
+        <svg data-lucide="list-music"></svg> Queue
+      </div>
+      <div class="nav-item" data-page="playlists" onclick="switchPage('playlists')">
+        <svg data-lucide="library"></svg> Playlists
+      </div>
+      <div class="nav-item" data-page="settings" onclick="switchPage('settings')">
+        <svg data-lucide="settings"></svg> Settings
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <select id="guildSelect" class="server-select" onchange="selectGuild(this.value)"></select>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <svg data-lucide="menu" style="width:20px;height:20px;color:var(--text-3);cursor:pointer;display:none;"></svg>
+      <div class="spacer"></div>
+      <div class="user-info">
+        <img id="userAvatar" src="" alt="">
+        <span id="userName"></span>
+      </div>
+      <a href="/auth/logout" class="logout-btn">Logout</a>
+    </div>
+
+    <div class="content" id="content">
+      <div id="noGuild" class="no-srv">
+        <h2>Select a server</h2>
+        <p>Choose a server from the sidebar to control playback.</p>
+      </div>
+
+      <!-- Home Page -->
+      <div id="page-home" class="hidden">
+        <div class="search-row">
+          <input type="text" id="searchInput" placeholder="Search or paste a URL..." onkeydown="if(event.key==='Enter')playSearch()" spellcheck="false">
+          <button id="searchBtn" onclick="playSearch()"><svg data-lucide="search" style="width:16px;height:16px;"></svg> Search</button>
+        </div>
+
+        <div class="np-card" id="npCard">
+          <img id="npArt" class="np-art" src="" alt="">
+          <div class="np-body">
+            <div class="np-title" id="npTitle">Nothing playing</div>
+            <div class="np-artist" id="npArtist"></div>
+            <div class="np-req" id="npReq"></div>
+
+            <div class="np-progress">
+              <div class="bar" onclick="seekClick(event)">
+                <div class="fill" id="progressFill"></div>
+              </div>
+              <div class="time">
+                <span id="currentTime">0:00</span>
+                <span id="totalTime">0:00</span>
+              </div>
+            </div>
+
+            <div class="np-controls">
+              <button class="ctrl" onclick="prevTrack()" title="Previous"><svg data-lucide="skip-back"></svg></button>
+              <button class="ctrl primary" id="pauseBtn" onclick="togglePause()" title="Play/Pause"><svg id="pauseIcon" data-lucide="pause"></svg></button>
+              <button class="ctrl" onclick="skip()" title="Skip"><svg data-lucide="skip-forward"></svg></button>
+              <div class="vol-group">
+                <label><svg data-lucide="volume-2"></svg></label>
+                <input type="range" id="volumeSlider" min="0" max="200" value="50" oninput="onVolumeChange(this.value)">
+                <span id="volumeLabel">50</span>
+              </div>
+            </div>
+
+            <div class="np-settings">
+              <select class="filter-sel" id="filterSelect" onchange="setFilter(this.value)">
+                <option value="clear">No filter</option>
+                <option value="bass">Bass</option>
+                <option value="nightcore">Nightcore</option>
+                <option value="vaporwave">Vaporwave</option>
+              </select>
+              <button class="pill" id="autoplayBtn" onclick="toggleAutoplay()"><svg data-lucide="refresh-cw" style="width:12px;height:12px;"></svg> Autoplay</button>
+              <button class="pill" id="stay247Btn" onclick="toggle247()"><svg data-lucide="moon" style="width:12px;height:12px;"></svg> 24/7</button>
+              <button class="ctrl danger" onclick="stop()" title="Stop"><svg data-lucide="square"></svg></button>
+              <button class="ctrl danger" onclick="clearQueue()" title="Clear"><svg data-lucide="trash-2"></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Queue Page -->
+      <div id="page-queue" class="hidden">
+        <div class="panel">
+          <div class="panel-hdr"><svg data-lucide="list-music"></svg> Queue <span id="queueCount" style="font-weight:400;color:var(--text-3);"></span></div>
+          <div class="queue-empty" id="queueEmpty">Queue is empty</div>
+          <table id="queueTable" class="queue-table hidden">
+            <thead><tr><th class="q-pos">#</th><th>Title</th><th class="q-dur">Length</th><th class="q-act"></th></tr></thead>
+            <tbody id="queueBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Playlists Page -->
+      <div id="page-playlists" class="hidden">
+        <div class="panel">
+          <div class="panel-hdr"><svg data-lucide="library"></svg> Playlists</div>
+          <div style="padding:14px 16px;">
+            <div class="pl-row">
+              <input type="text" id="playlistName" placeholder="Playlist name..." onkeydown="if(event.key==='Enter')savePlaylist()" spellcheck="false">
+              <button onclick="savePlaylist()"><svg data-lucide="save" style="width:16px;height:16px;"></svg></button>
+              <button id="loadPlaylistBtn" onclick="loadPlaylist()" disabled><svg data-lucide="upload" style="width:16px;height:16px;"></svg></button>
+              <button class="danger" onclick="deletePlaylist()"><svg data-lucide="trash-2" style="width:16px;height:16px;"></svg></button>
+            </div>
+            <div class="pl-list" id="playlistList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Page -->
+      <div id="page-settings" class="hidden">
+        <div class="panel">
+          <div class="panel-hdr"><svg data-lucide="settings"></svg> Settings</div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:16px;">
+            <div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Default Volume</div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <input type="range" id="defVol" min="0" max="200" value="50" style="accent-color:var(--accent);width:140px;">
+                <span id="defVolLabel" style="font-size:13px;color:var(--text-2);">50%</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Default Filter</div>
+              <select class="filter-sel" id="defFilter" style="font-size:13px;padding:8px 12px;">
+                <option value="clear">No filter</option>
+                <option value="bass">Bass</option>
+                <option value="nightcore">Nightcore</option>
+                <option value="vaporwave">Vaporwave</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <button class="pill" id="defAutoplay" onclick="this.classList.toggle('on'); toast('Autoplay default '+(this.classList.contains('on')?'on':'off'),'ok');">Autoplay</button>
+              <button class="pill" id="def247" onclick="this.classList.toggle('on'); toast('24/7 default '+(this.classList.contains('on')?'on':'off'),'ok');">24/7</button>
+            </div>
+            <div style="color:var(--text-3);font-size:12px;border-top:1px solid var(--surface-2);padding-top:12px;">
+              Settings are saved locally for now. Server-wide settings will sync with the bot in a future update.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+let socket = null, currentGuild = '', playerState = null;
+let volumeTimer = null, dragSrcIdx = null, playlists = [], selectedPlaylist = '';
+let progressAnim = null, lastPosition = 0, lastUpdateTime = 0, currentPage = 'home';
+
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast ' + (type || '');
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+/* Icons */
+lucide.createIcons();
+
+/* Pages */
+function switchPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+  ['home','queue','playlists','settings'].forEach(p => {
+    document.getElementById('page-'+p).classList.toggle('hidden', p !== page);
+  });
+}
+
+/* Auth */
+async function checkAuth() {
+  const r = await fetch('/auth/me');
+  const d = await r.json();
+  if (d.authenticated) {
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    document.getElementById('userAvatar').src = d.user.avatar;
+    document.getElementById('userName').textContent = d.user.username;
+    loadGuilds();
+    lucide.createIcons();
+  }
+}
+
+async function loadGuilds() {
+  const r = await fetch('/api/guilds');
+  const guilds = await r.json();
+  const sel = document.getElementById('guildSelect');
+  sel.innerHTML = '<option value="">Select a server</option>';
+  guilds.forEach(g => {
+    const o = document.createElement('option');
+    o.value = g.id; o.textContent = g.name;
+    sel.appendChild(o);
+  });
+}
+
+function selectGuild(gid) {
+  if (currentGuild && socket) socket.emit('leaveGuild', currentGuild);
+  currentGuild = gid;
+  if (!gid) { showEmpty(); return; }
+  document.getElementById('noGuild').classList.add('hidden');
+  switchPage('home');
+  connectSocket();
+  fetchState();
+  loadPlUI();
+}
+
+function showEmpty() {
+  document.getElementById('noGuild').classList.remove('hidden');
+  ['page-home','page-queue','page-playlists','page-settings'].forEach(p => document.getElementById('page-'+p).classList.add('hidden'));
+}
+
+function connectSocket() {
+  if (socket) socket.close();
+  socket = io({ query: { guildId: currentGuild } });
+  socket.emit('joinGuild', currentGuild);
+  socket.on('playerUpdate', d => { if (d.guildId === currentGuild) { lastPosition = d.position||0; lastUpdateTime = Date.now(); updateUI(d); } });
+  socket.on('queueUpdate', d => { if (d.guildId === currentGuild) updateQ(d); });
+  socket.on('botLeft', d => { if (d.guildId === currentGuild) { playerState = null; stopAnim(); showEmpty(); } });
+}
+
+async function fetchState() {
+  const r = await fetch(`/api/guild/${currentGuild}/player`);
+  const d = await r.json();
+  if (d.active) { lastPosition = d.position||0; lastUpdateTime = Date.now(); updateUI(d); updateQ(d); }
+  else showEmpty();
+}
+
+function updateUI(d) {
+  playerState = d;
+  document.getElementById('npArt').src = d.current?.thumbnail || '';
+  document.getElementById('npTitle').innerHTML = d.current ? `<a href="${d.current.url}" target="_blank">${d.current.title}</a>` : 'Nothing playing';
+  document.getElementById('npArtist').textContent = d.current ? d.current.title.split(' - ')[0] || '' : '';
+  document.getElementById('npReq').textContent = d.current ? `Requested by @${d.current.requester}` : '';
+
+  const pi = document.getElementById('pauseIcon');
+  if (d.paused) { pi.setAttribute('data-lucide', 'play'); } else { pi.setAttribute('data-lucide', 'pause'); }
+  lucide.createIcons();
+
+  document.getElementById('volumeSlider').value = d.volume;
+  document.getElementById('volumeLabel').textContent = d.volume;
+
+  const ab = document.getElementById('autoplayBtn');
+  ab.className = 'pill' + (d.autoplay ? ' on' : '');
+  const sb = document.getElementById('stay247Btn');
+  sb.className = 'pill' + (d.stay247 ? ' on' : '');
+  document.getElementById('filterSelect').value = d.filters || 'clear';
+  updateProg(d);
+  startAnim(d);
+}
+
+function updateProg(d) {
+  if (!d||!d.current) return;
+  const t = d.current.duration||0, p = d.position||0;
+  const totalMs = t * 1000;
+  const pct = totalMs > 0 ? Math.min(p/totalMs*100, 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('currentTime').textContent = fmt(Math.floor(p/1000));
+  document.getElementById('totalTime').textContent = fmt(t);
+}
+
+function startAnim(d) {
+  stopAnim();
+  if (!d||!d.current||d.paused) return;
+  const totalMs = (d.current.duration||0)*1000, start = lastPosition, st = lastUpdateTime;
+  function tick() {
+    const pos = Math.min(start + Date.now() - st, totalMs);
+    d.position = pos; updateProg(d);
+    if (pos < totalMs) progressAnim = requestAnimationFrame(tick);
+  }
+  progressAnim = requestAnimationFrame(tick);
+}
+
+function stopAnim() { if (progressAnim) { cancelAnimationFrame(progressAnim); progressAnim = null; } }
+
+function updateQ(d) {
+  const q = d.queue||[];
+  const tb = document.getElementById('queueBody'), tbl = document.getElementById('queueTable');
+  const emp = document.getElementById('queueEmpty'), cnt = document.getElementById('queueCount');
+  cnt.textContent = q.length ? '('+q.length+')' : '';
+  if (!q.length) { emp.classList.remove('hidden'); tbl.classList.add('hidden'); return; }
+  emp.classList.add('hidden'); tbl.classList.remove('hidden');
+  tb.innerHTML = q.map((t,i) => `<tr draggable="true" data-index="${i}" ondragstart="dragS(event)" ondragover="dragO(event)" ondrop="drop(event)" ondragend="dragE(event)"><td class="q-pos">${i+1}</td><td class="q-title"><a href="${t.url}" target="_blank">${t.title}</a></td><td class="q-dur">${fmt(t.duration)}</td><td class="q-act"><button class="rm-btn" onclick="removeTrack(${i+1})"><svg data-lucide="x" style="width:14px;height:14px;"></svg></button></td></tr>`).join('');
+  lucide.createIcons();
+}
+
+function fmt(s) { if (!s||isNaN(s)) return '0:00'; const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=Math.floor(s%60); return h?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${m}:${String(sec).padStart(2,'0')}`; }
+
+async function playSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('searchBtn'); btn.disabled = true;
+  const orig = btn.innerHTML; btn.innerHTML = '<svg data-lucide="loader-2" style="width:16px;height:16px;animation:spin 1s linear infinite;"></svg>';
+  lucide.createIcons();
+  try {
+    const r = await fetch(`/api/guild/${currentGuild}/play`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query:q}) });
+    const d = await r.json();
+    if (d.success) { toast(d.track, 'ok'); document.getElementById('searchInput').value = ''; setTimeout(fetchState,500); }
+    else toast(d.error||'Failed', 'err');
+  } catch { toast('Network error', 'err'); }
+  btn.disabled = false; btn.innerHTML = orig; lucide.createIcons();
+}
+
+async function togglePause() {
+  const r = await fetch(`/api/guild/${currentGuild}/pause`, { method:'POST' });
+  const d = await r.json();
+  if (d.success && playerState) { playerState.paused = d.paused; d.paused?stopAnim():startAnim(playerState); updateUI(playerState); }
+}
+
+async function skip() { await fetch(`/api/guild/${currentGuild}/skip`, { method:'POST' }); setTimeout(fetchState,500); }
+async function prevTrack() { if (!playerState||!playerState.current) return; await fetch(`/api/guild/${currentGuild}/seek`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({seconds:0}) }); setTimeout(fetchState,300); }
+async function stop() { await fetch(`/api/guild/${currentGuild}/stop`, { method:'POST' }); playerState=null; stopAnim(); showEmpty(); }
+async function shuffleQueue() { await fetch(`/api/guild/${currentGuild}/shuffle`, { method:'POST' }); fetchState(); }
+async function clearQueue() { await fetch(`/api/guild/${currentGuild}/clear`, { method:'POST' }); fetchState(); }
+
+function onVolumeChange(v) {
+  document.getElementById('volumeLabel').textContent = v;
+  clearTimeout(volumeTimer);
+  volumeTimer = setTimeout(async () => { await fetch(`/api/guild/${currentGuild}/volume`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({volume:parseInt(v)}) }); }, 300);
+}
+
+function seekClick(e) {
+  const r = e.currentTarget.getBoundingClientRect(), pct = (e.clientX - r.left)/r.width;
+  if (playerState&&playerState.current) { const secs=Math.floor(pct*playerState.current.duration); document.getElementById('progressFill').style.width=(pct*100)+'%'; fetch(`/api/guild/${currentGuild}/seek`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seconds:secs})}).catch(()=>{}); }
+}
+
+async function toggleAutoplay() { const r=await fetch(`/api/guild/${currentGuild}/autoplay`,{method:'POST'}); if(r.ok)fetchState(); }
+async function toggle247() { const r=await fetch(`/api/guild/${currentGuild}/247`,{method:'POST'}); if(r.ok)fetchState(); }
+async function setFilter(f) { await fetch(`/api/guild/${currentGuild}/filters`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filter:f})}); fetchState(); }
+
+function dragS(e) { dragSrcIdx=parseInt(e.currentTarget.dataset.index); e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
+function dragO(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function dragE(e) { document.querySelectorAll('.queue-table tr').forEach(r=>r.classList.remove('dragging','drag-over')); }
+async function drop(e) { e.preventDefault(); const to=parseInt(e.currentTarget.dataset.index); if(dragSrcIdx===null||dragSrcIdx===to)return; await fetch(`/api/guild/${currentGuild}/move`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:dragSrcIdx+1,to:to+1})}); dragSrcIdx=null; fetchState(); }
+async function removeTrack(p) { await fetch(`/api/guild/${currentGuild}/remove`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({position:p})}); fetchState(); }
+
+async function loadPlUI() {
+  if (!currentGuild) return;
+  const r = await fetch(`/api/guild/${currentGuild}/playlists`);
+  playlists = await r.json();
+  const list = document.getElementById('playlistList'), lb = document.getElementById('loadPlaylistBtn');
+  if (!playlists.length) { list.innerHTML='<p style="color:var(--text-3);font-size:12px;padding:6px 0;">No playlists</p>'; lb.disabled=true; return; }
+  list.innerHTML = playlists.map(p => `<div class="pl-item${selectedPlaylist===p.name?' sel':''}" onclick="selPl('${p.name}')" data-name="${p.name}"><span class="pl-n">${p.name}</span><span class="pl-c">${p.count}</span><button class="pl-d" onclick="event.stopPropagation();delPl('${p.name}')"><svg data-lucide="x" style="width:14px;height:14px;"></svg></button></div>`).join('');
+  lucide.createIcons();
+  lb.disabled = !selectedPlaylist;
+}
+
+function selPl(n) { selectedPlaylist=n; document.getElementById('playlistName').value=n; document.getElementById('loadPlaylistBtn').disabled=false; document.querySelectorAll('.pl-item').forEach(e=>e.classList.toggle('sel',e.dataset.name===n)); }
+async function savePlaylist() { const n=document.getElementById('playlistName').value.trim(); if(!n)return toast('Enter a name','err'); const r=await fetch(`/api/guild/${currentGuild}/playlists/save`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n})}); const d=await r.json(); if(d.success){toast('Saved '+d.count+' tracks','ok');loadPlUI();}else toast(d.error||'Failed','err'); }
+async function loadPlaylist() { const n=selectedPlaylist||document.getElementById('playlistName').value.trim(); if(!n)return toast('Select a playlist','err'); const r=await fetch(`/api/guild/${currentGuild}/playlists/load`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n})}); const d=await r.json(); if(d.success){toast('Loaded '+d.count+' tracks','ok');setTimeout(fetchState,1000);}else toast(d.error||'Failed','err'); }
+async function delPl(n) { const name=n||selectedPlaylist||document.getElementById('playlistName').value.trim(); if(!name)return toast('Select a playlist','err'); if(!confirm('Delete "'+name+'"?'))return; await fetch(`/api/guild/${currentGuild}/playlists/delete`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}); if(selectedPlaylist===name)selectedPlaylist=''; document.getElementById('playlistName').value=''; toast('Deleted','ok'); loadPlUI(); }
+
+document.addEventListener('keydown', e => {
+  if (!playerState||!currentGuild||e.target.tagName==='INPUT') return;
+  switch(e.code) { case 'Space': e.preventDefault(); togglePause(); break; case 'ArrowRight': skip(); break; case 'ArrowLeft': prevTrack(); break; }
+});
+
+checkAuth();
+</script>
+</body>
+</html>
